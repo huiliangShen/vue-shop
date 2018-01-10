@@ -1,17 +1,17 @@
 <template>
   <div class="goods">
-    <div class="menu-wrapper">
+    <div class="menu-wrapper" v-el:menu-wrapper>
       <ul>
-        <li v-for="item in goods" track-by="$index" class="menu-item">
+        <li v-for="item in goods" track-by="$index" class="menu-item" :class="{'current': currentIndex === $index}" @click="selectMenu($index, $event)">
           <span class="text border-1px">
             <span  v-show="item.type > 0" class="icon" :class="classMap[item.type]"></span>{{item.name}}
             </span>
         </li>
       </ul>
     </div>
-    <div class="foods-wrapper">
+    <div class="foods-wrapper" v-el:food-wrapper>
       <ul>
-        <li v-for="item in goods" class="food-list">
+        <li v-for="item in goods" class="food-list food-list-hook">
           <h1 class="title">{{item.name}}</h1>
           <ul>
             <li v-for="food in item.foods" class="food-item border-1px">
@@ -34,21 +34,45 @@
         </li>
       </ul>
     </div>
+    <v-shop-cart :delivery-price="seller.deliveryPrice" :min-price="seller.minPrice"></v-shop-cart>
   </div>
 </template>
 
 <script type="text/ecmascript-6">
+  import BetterScroll from 'better-scroll';
+  import shopCart from '../shopcart/shopcart.vue';
+
   const ERR_OK = 200;
   export default {
     data () {
       return {
         goods: [],
-        classMap: []
+        classMap: [],
+        menuScroll: null,
+        foodsScroll: null,
+        listHeight: [],
+        scrollY: 0
       };
     },
     props: {
       seller: {
         type: Object
+      }
+    },
+    components: {
+      'v-shop-cart': shopCart
+    },
+    computed: {
+      currentIndex () {
+        for (let index in this.listHeight) {
+          index = index - 0;
+          let item1 = this.listHeight[index];
+          let item2 = this.listHeight[index + 1];
+          if (item1 <= this.scrollY && item2 > this.scrollY) {
+            return index;
+          }
+        }
+        return 0;
       }
     },
     created () {
@@ -57,9 +81,45 @@
         let result = res.body;
         if (result.errno === ERR_OK) {
             vm.goods = result.data;
+            vm.$nextTick(() => {
+              vm._initScroll();
+              vm._calculateHeigth();
+            });
         }
       });
       this.classMap = ['decrease', 'discount', 'special', 'invoice', 'guarantee'];
+    },
+    methods: {
+      _initScroll () {
+        this.menuScroll = new BetterScroll(this.$els.menuWrapper, {
+          click: true
+        });
+
+        this.foodsScroll = new BetterScroll(this.$els.foodWrapper, {
+          probeType: 3
+        });
+
+        this.foodsScroll.on('scroll', (pos) => {
+          this.scrollY = Math.abs(Math.round(pos.y));
+        });
+      },
+      _calculateHeigth () {
+        let foodList = this.$els.foodWrapper.getElementsByClassName('food-list-hook');
+        let heigth = 0;
+        this.listHeight.push(heigth);
+        for (let item of foodList) {
+          heigth += item.clientHeight;
+          this.listHeight.push(heigth);
+        }
+      },
+      selectMenu (index, evnet) {
+        if (!evnet._constructed) {
+          return;
+        }
+        let foodList = this.$els.foodWrapper.getElementsByClassName('food-list-hook');
+        let el = foodList[index];
+        this.foodsScroll.scrollToElement(el, 300);
+      }
     }
   };
 </script>
@@ -85,6 +145,11 @@
           height 54px
           width 56px
           line-height 14px
+          &.current
+            background #fff
+            font-weight 700
+            margin-top -1px
+            border-none()
           .icon
             display inline-block
             vertical-align top
@@ -142,7 +207,7 @@
               font-size 10px
               color rgb(147,152,159)
               margin-bottom 8px
-              line-height 10px
+              line-height 12px
             .extra
               line-height 10px
               font-size 10px
