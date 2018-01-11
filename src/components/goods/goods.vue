@@ -28,20 +28,24 @@
                   <span>￥{{food.price}}</span>
                   <span v-show="food.oldPrice">￥{{food.oldPrice}}</span>
                 </div>
+                <div class="cart-control-wrapper">
+                  <v-cart-control :food="food"></v-cart-control>
+                </div>
               </div>
+              
             </li>
           </ul>
         </li>
       </ul>
     </div>
-    <v-shop-cart :delivery-price="seller.deliveryPrice" :min-price="seller.minPrice"></v-shop-cart>
+    <v-shop-cart v-ref:shopcart :delivery-price="seller.deliveryPrice" :min-price="seller.minPrice" :select-foods="selectFoods"></v-shop-cart>
   </div>
 </template>
 
 <script type="text/ecmascript-6">
   import BetterScroll from 'better-scroll';
   import shopCart from '../shopcart/shopcart.vue';
-
+  import cartControl from '../cartcontrol/cartcontrol.vue';
   const ERR_OK = 200;
   export default {
     data () {
@@ -60,7 +64,8 @@
       }
     },
     components: {
-      'v-shop-cart': shopCart
+      'v-shop-cart': shopCart,
+      'v-cart-control': cartControl
     },
     computed: {
       currentIndex () {
@@ -73,6 +78,17 @@
           }
         }
         return 0;
+      },
+      selectFoods () {
+        let foods = [];
+        this.goods.forEach((good) => {
+          good.foods.forEach((food) => {
+            if (food.count) {
+              foods.push(food);
+            }
+          });
+        });
+        return foods;
       }
     },
     created () {
@@ -96,6 +112,7 @@
         });
 
         this.foodsScroll = new BetterScroll(this.$els.foodWrapper, {
+           click: true,
           probeType: 3
         });
 
@@ -119,6 +136,17 @@
         let foodList = this.$els.foodWrapper.getElementsByClassName('food-list-hook');
         let el = foodList[index];
         this.foodsScroll.scrollToElement(el, 300);
+      },
+      drop (el) {
+        // 优化，异步执行下落动画
+        this.$nextTick(() => {
+          this.$refs.shopcart.drop(el);
+        });
+      }
+    },
+    events: {
+      'cart.add' (el) {
+        this.drop(el);
       }
     }
   };
@@ -227,4 +255,9 @@
                 font-size 10px
                 color rgb(147,152,159)
                 text-decoration line-through
+            .cart-control-wrapper
+              position absolute
+              right 0
+              bottom 12px
+
 </style>
