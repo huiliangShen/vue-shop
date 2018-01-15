@@ -49,7 +49,7 @@ export default {
             display inline-block
             padding 6px 
         .cart-descrease
-            transition all 0.4s linear
+            transition all 0.4s linear 
             &.move-transition
                 opacity 1
                 transform translate3d(0, 0, 0)
