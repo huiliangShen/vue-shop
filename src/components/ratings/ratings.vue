@@ -1,5 +1,5 @@
 <template>
-  <div class="ratings">
+  <div class="ratings" v-el:ratingsw>
     <div class="ratings-content">
       <div class="overview">
         <div class="overview-left">
@@ -28,20 +28,20 @@
       <v-ratingselect :ratings="ratings" :only-content="onlyContent" :select-type="selectType"></v-ratingselect>
       <div class="rating-wrapper">
          <ul>
-          <li v-for="rating in ratings" class="rating-item">
+          <li v-for="rating in ratings" class="rating-item" v-bind:key="rating.username">
             <div class="avatar">
-              <img :src="rating.avatar" alt="">
+              <img :src="rating.avatar" alt="" width="28" height="28">
             </div>
             <div class="content">
               <h1 class="name">{{rating.username}}</h1>
               <div class="star-wrapper">
-                <star :size="24" :score="rating.score"></star>
+                <v-star :size="24" :score="rating.score"></v-star>
                 <span class="delivery" v-show="rating.deliveryTime">{{rating.deliveryTime}}</span>
               </div>
               <p class="text">{{rating.text}}</p>
               <div class="recommend" v-show="rating.recommend && rating.recommend.length > 0">
                 <span class="icon-thumb_up"></span>
-                <span v-for="item in rating.recommend">{{item}}</span>
+                <span v-for="item in rating.recommend" v-bind:key="item">{{item}}</span>
               </div>
               <div class="time">{{rating.rateTime | formatDate}}</div>
             </div>
@@ -54,6 +54,7 @@
 </template>
 
 <script type="text/ecmascript-6">
+  import BScroll from 'better-scroll';
   import star from '../star/star.vue';
   import split from '../split/split.vue';
   import ratingselect from '../ratingselect/ratingselect.vue';
@@ -66,7 +67,8 @@
           return {
             ratings: [],
             selectType: ALL,
-            onlyContent: true
+            onlyContent: true,
+            betterScorll: null
           };
     },
     props: {
@@ -84,6 +86,11 @@
         let body = res.body;
         if (body.errno === ERR_OK) {
           this.ratings = body.data;
+          this.$nextTick(() => {
+            this.betterScorll = new BScroll(this.$els.ratingsw, {
+               click: true
+            });
+          });
         }
       });
     },
@@ -97,10 +104,12 @@
 </script>
 
 <style lang="stylus" rel="stylesheet/stylus">
+  @import '../../common/stylus/minin.styl';
   .ratings
     position absolute
     top 174px
     left 0
+    bottom 0
     width 100%
     overflow hidden
     .overview
@@ -164,4 +173,10 @@
             line-height 18px
             color rgb(147,153,159)
             font-size 12px
+    .rating-wrapper
+      padding 0 18px
+      .rating-item
+        display flex
+        padding 18px 0
+        border-1px(rgba(7,17,27,0.1))
 </style>
